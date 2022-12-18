@@ -31,6 +31,7 @@ import me.shedaniel.rei.api.client.config.ConfigObject;
 import me.shedaniel.rei.api.client.gui.config.EntryPanelOrdering;
 import me.shedaniel.rei.api.client.registry.entry.CollapsibleEntryRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
+import me.shedaniel.rei.api.client.search.SearchFilter;
 import me.shedaniel.rei.api.client.view.Views;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
@@ -62,7 +63,7 @@ public class EntryListSearchManager {
     
     public static final EntryListSearchManager INSTANCE = new EntryListSearchManager();
     
-    private AsyncSearchManager searchManager = new AsyncSearchManager(EntryRegistry.getInstance()::getPreFilteredList, () -> {
+    private final AsyncSearchManager searchManager = new AsyncSearchManager(EntryListSearchManager::getAllEntriesContextually, () -> {
         boolean checkCraftable = ConfigManager.getInstance().isCraftableOnlyEnabled();
         LongSet workingItems = checkCraftable ? new LongOpenHashSet() : null;
         if (checkCraftable) {
@@ -72,6 +73,14 @@ public class EntryListSearchManager {
         }
         return checkCraftable ? stack -> workingItems.contains(EntryStacks.hashExact(stack)) : stack -> true;
     }, EntryStack::normalize);
+    
+    private static List<EntryStack<?>> getAllEntriesContextually(SearchFilter filter) {
+        if (ConfigObject.getInstance().isHidingEntryPanelIfIdle() && filter.getFilter().isEmpty()) {
+            return List.of();
+        }
+        
+        return EntryRegistry.getInstance().getPreFilteredList();
+    }
     
     public void update(String searchTerm, boolean ignoreLastSearch, Consumer<List</*EntryStack<?> | CollapsedStack*/ Object>> update) {
         Stopwatch stopwatch = Stopwatch.createStarted();

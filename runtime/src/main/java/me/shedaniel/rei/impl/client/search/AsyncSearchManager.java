@@ -40,21 +40,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 
 public class AsyncSearchManager {
     private static final ExecutorService EXECUTOR_SERVICE = new ThreadCreator("REI-AsyncSearchManager").asService();
-    private final Supplier<List<EntryStack<?>>> stacksProvider;
+    private final Function<SearchFilter, List<EntryStack<?>>> stacksProvider;
     private final Supplier<Predicate<EntryStack<?>>> additionalPredicateSupplier;
     private final UnaryOperator<EntryStack<?>> transformer;
     private ExecutorTuple executor;
     private SearchFilter filter;
     private Map.Entry<List<EntryStack<?>>, SearchFilter> last;
     
-    public AsyncSearchManager(Supplier<List<EntryStack<?>>> stacksProvider, Supplier<Predicate<EntryStack<?>>> additionalPredicateSupplier, UnaryOperator<EntryStack<?>> transformer) {
+    public AsyncSearchManager(Function<SearchFilter, List<EntryStack<?>>> stacksProvider, Supplier<Predicate<EntryStack<?>>> additionalPredicateSupplier, UnaryOperator<EntryStack<?>> transformer) {
         this.stacksProvider = stacksProvider;
         this.additionalPredicateSupplier = additionalPredicateSupplier;
         this.transformer = transformer;
@@ -124,7 +121,7 @@ public class AsyncSearchManager {
                 last = this.last;
             }
             return get(this.filter, this.additionalPredicateSupplier.get(), this.transformer,
-                    this.stacksProvider.get(), last, this, executor)
+                    this.stacksProvider.apply(filter), last, this, executor)
                     .thenApply(entry -> {
                         synchronized (AsyncSearchManager.this) {
                             this.last = entry;
