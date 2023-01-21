@@ -23,7 +23,6 @@
 
 package me.shedaniel.rei.impl;
 
-import com.mojang.math.Matrix4f;
 import com.mojang.serialization.DataResult;
 import dev.architectury.utils.value.BooleanValue;
 import me.shedaniel.math.Point;
@@ -54,6 +53,7 @@ import net.minecraft.world.item.TooltipFlag;
 import org.apache.commons.lang3.function.TriFunction;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.lang.reflect.Field;
 import java.util.Collection;

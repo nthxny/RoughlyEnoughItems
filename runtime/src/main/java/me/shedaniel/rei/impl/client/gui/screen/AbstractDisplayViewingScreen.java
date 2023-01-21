@@ -27,7 +27,6 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.math.Matrix4f;
 import dev.architectury.fluid.FluidStack;
 import dev.architectury.utils.value.IntValue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -71,12 +70,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.util.*;
 import java.util.function.UnaryOperator;
@@ -303,10 +304,10 @@ public abstract class AbstractDisplayViewingScreen extends Screen implements Dis
             Registry<?> registry;
             List<Holder<?>> objects;
             if (type == VanillaEntryTypes.ITEM) {
-                registry = Registry.ITEM;
+                registry = BuiltInRegistries.ITEM;
                 objects = CollectionUtils.map(widget.getEntries(), stack -> stack.<ItemStack>castValue().getItem().builtInRegistryHolder());
             } else if (type == VanillaEntryTypes.FLUID) {
-                registry = Registry.FLUID;
+                registry = BuiltInRegistries.FLUID;
                 objects = CollectionUtils.map(widget.getEntries(), stack -> stack.<FluidStack>castValue().getFluid().builtInRegistryHolder());
             } else continue;
             Stream<? extends TagKey<?>> collection = registry.getTags()

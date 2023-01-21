@@ -38,7 +38,7 @@ import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.impl.common.InternalLogger;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -113,9 +113,9 @@ public class HideIngredientsFromTagsPlugin implements REIClientPlugin {
         public Cache prepareCache(boolean async) {
             try {
                 EntryIngredient ingredient = EntryIngredient.builder()
-                        .addAll(EntryIngredients.ofItemTag(TagKey.create(Registry.ITEM_REGISTRY, HIDDEN_TAG)))
-                        .addAll(EntryIngredients.ofItemTag(TagKey.create(Registry.BLOCK_REGISTRY, HIDDEN_TAG)))
-                        .addAll(EntryIngredients.ofFluidTag(TagKey.create(Registry.FLUID_REGISTRY, HIDDEN_TAG)))
+                        .addAll(EntryIngredients.ofItemTag(TagKey.create(Registries.ITEM, HIDDEN_TAG)))
+                        .addAll(EntryIngredients.ofItemTag(TagKey.create(Registries.BLOCK, HIDDEN_TAG)))
+                        .addAll(EntryIngredients.ofFluidTag(TagKey.create(Registries.FLUID, HIDDEN_TAG)))
                         .build();
                 LongSet hashes = new LongOpenHashSet();
                 for (EntryStack<?> stack : ingredient) {

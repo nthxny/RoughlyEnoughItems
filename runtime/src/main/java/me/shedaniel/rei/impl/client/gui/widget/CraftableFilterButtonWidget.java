@@ -23,7 +23,6 @@
 
 package me.shedaniel.rei.impl.client.gui.widget;
 
-import com.mojang.math.Vector4f;
 import dev.architectury.utils.value.BooleanValue;
 import me.shedaniel.math.Point;
 import me.shedaniel.math.Rectangle;
@@ -58,6 +57,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import org.joml.Vector4f;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -88,7 +88,7 @@ public class CraftableFilterButtonWidget {
                 .tooltipLineSupplier(button -> Component.translatable(ConfigManager.getInstance().isCraftableOnlyEnabled() ? "text.rei.showing_craftable" : "text.rei.showing_all"));
         Widget overlayWidget = Widgets.createDrawableWidget((helper, matrices, mouseX, mouseY, delta) -> {
             Vector4f vector = new Vector4f(bounds.x + 2, bounds.y + 2, helper.getBlitOffset() - 10, 1.0F);
-            vector.transform(matrices.last().pose());
+            matrices.last().pose().transform(vector);
             itemRenderer.blitOffset = vector.z();
             itemRenderer.renderGuiItem(icon, (int) vector.x(), (int) vector.y());
             itemRenderer.blitOffset = 0.0F;

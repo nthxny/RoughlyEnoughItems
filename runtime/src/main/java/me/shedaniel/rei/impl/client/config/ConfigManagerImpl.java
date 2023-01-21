@@ -92,6 +92,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static me.shedaniel.autoconfig.util.Utils.getUnsafely;
 import static me.shedaniel.autoconfig.util.Utils.setUnsafely;
@@ -452,7 +453,7 @@ public class ConfigManagerImpl implements ConfigManager {
                     ScreenHooks.addRenderableWidget(screen, new Button(screen.width - 104, 4, 100, 20, Component.translatable("text.rei.credits"), button -> {
                         CreditsScreen creditsScreen = new CreditsScreen(screen);
                         Minecraft.getInstance().setScreen(creditsScreen);
-                    }));
+                    }, Supplier::get) {});
                 }).setSavingRunnable(() -> {
                     saveConfig();
                     EntryRegistry.getInstance().refilter();

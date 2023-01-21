@@ -34,15 +34,12 @@ import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.client.search.SearchFilter;
 import me.shedaniel.rei.api.client.view.Views;
 import me.shedaniel.rei.api.common.entry.EntryStack;
-import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.impl.client.search.AsyncSearchManager;
 import me.shedaniel.rei.impl.common.InternalLogger;
 import me.shedaniel.rei.impl.common.entry.type.collapsed.CollapsedStack;
 import me.shedaniel.rei.impl.common.entry.type.collapsed.CollapsibleEntryRegistryImpl;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,14 +49,7 @@ import java.util.function.Consumer;
 
 public class EntryListSearchManager {
     private static final Comparator<? super EntryStack<?>> ENTRY_NAME_COMPARER = Comparator.comparing(stack -> stack.asFormatStrippedText().getString());
-    private static final Comparator<? super EntryStack<?>> ENTRY_GROUP_COMPARER = Comparator.comparingInt(stack -> {
-        if (stack.getType() == VanillaEntryTypes.ITEM) {
-            CreativeModeTab group = ((ItemStack) stack.getValue()).getItem().getItemCategory();
-            if (group != null)
-                return group.getId();
-        }
-        return Integer.MAX_VALUE;
-    });
+    // private static final Comparator<? super EntryStack<?>> ENTRY_GROUP_COMPARER = VersionAdapter.INSTANCE.getEntryGroupComparator();
     
     public static final EntryListSearchManager INSTANCE = new EntryListSearchManager();
     
@@ -109,8 +99,8 @@ public class EntryListSearchManager {
         EntryPanelOrdering ordering = ConfigObject.getInstance().getItemListOrdering();
         if (ordering == EntryPanelOrdering.NAME)
             list.sort(ENTRY_NAME_COMPARER);
-        if (ordering == EntryPanelOrdering.GROUPS)
-            list.sort(ENTRY_GROUP_COMPARER);
+        // if (ordering == EntryPanelOrdering.GROUPS)
+            // list.sort(ENTRY_GROUP_COMPARER);
         if (!ConfigObject.getInstance().isItemListAscending()) {
             Collections.reverse(list);
         }
