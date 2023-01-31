@@ -50,7 +50,8 @@ public class PreFilteredEntryList implements FilteredEntryList {
     private final EntryRegistryList list;
     private final Map<FilteringRule<?>, DataPair> filteringData = new HashMap<>();
     private final Long2BooleanMap cached = new Long2BooleanOpenHashMap();
-    private final List<EntryStack<?>> listView = new InternalListView();
+    private final List<HashedEntryStackWrapper> listView = new InternalListView();
+    private final List<EntryStack<?>> unwrappedListView = new InternalUnwrappedListView();
     private long mod = 0;
     
     public PreFilteredEntryList(EntryRegistry registry, EntryRegistryList list) {
@@ -212,16 +213,21 @@ public class PreFilteredEntryList implements FilteredEntryList {
     }
     
     @Override
-    public List<EntryStack<?>> getList() {
+    public List<HashedEntryStackWrapper> getList() {
         return listView;
     }
     
-    private class InternalListView extends AbstractList<EntryStack<?>> {
+    @Override
+    public List<EntryStack<?>> getUnwrappedList() {
+        return unwrappedListView;
+    }
+    
+    private class InternalListView extends AbstractList<HashedEntryStackWrapper> {
         private long prevMod = -1;
-        private List<EntryStack<?>> stacks;
+        private List<HashedEntryStackWrapper> stacks;
         
         @Override
-        public EntryStack<?> get(int index) {
+        public HashedEntryStackWrapper get(int index) {
             if (prevMod == mod) {
                 return stacks.get(index);
             }
@@ -246,7 +252,7 @@ public class PreFilteredEntryList implements FilteredEntryList {
         }
         
         @Override
-        public Iterator<EntryStack<?>> iterator() {
+        public Iterator<HashedEntryStackWrapper> iterator() {
             if (prevMod == mod) {
                 return stacks.iterator();
             }
@@ -255,13 +261,41 @@ public class PreFilteredEntryList implements FilteredEntryList {
             return new AbstractIterator<>() {
                 @Nullable
                 @Override
-                protected EntryStack<?> computeNext() {
+                protected HashedEntryStackWrapper computeNext() {
                     while (iterator.hasNext()) {
                         HashedEntryStackWrapper wrapper = iterator.next();
-                        if (isFiltered(wrapper.unwrap(), wrapper.hashExact())) return wrapper.unwrap();
+                        if (isFiltered(wrapper.unwrap(), wrapper.hashExact())) return wrapper;
                     }
                     
                     return endOfData();
+                }
+            };
+        }
+    }
+    
+    private class InternalUnwrappedListView extends AbstractList<EntryStack<?>> {
+        @Override
+        public EntryStack<?> get(int index) {
+            return listView.get(index).unwrap();
+        }
+        
+        @Override
+        public int size() {
+            return listView.size();
+        }
+        
+        @Override
+        public Iterator<EntryStack<?>> iterator() {
+            Iterator<HashedEntryStackWrapper> iterator = listView.iterator();
+            return new Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+                
+                @Override
+                public EntryStack<?> next() {
+                    return iterator.next().unwrap();
                 }
             };
         }

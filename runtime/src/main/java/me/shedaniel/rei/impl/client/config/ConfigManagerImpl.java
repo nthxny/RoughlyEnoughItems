@@ -46,6 +46,8 @@ import me.shedaniel.clothconfig2.gui.AbstractConfigScreen;
 import me.shedaniel.clothconfig2.gui.GlobalizedClothConfigScreen;
 import me.shedaniel.clothconfig2.gui.entries.KeyCodeEntry;
 import me.shedaniel.clothconfig2.gui.entries.TextListEntry;
+import me.shedaniel.rei.RoughlyEnoughItemsCore;
+import me.shedaniel.rei.RoughlyEnoughItemsCoreClient;
 import me.shedaniel.rei.api.client.REIRuntime;
 import me.shedaniel.rei.api.client.config.ConfigManager;
 import me.shedaniel.rei.api.client.config.addon.ConfigAddonRegistry;
@@ -58,17 +60,24 @@ import me.shedaniel.rei.api.client.gui.config.CheatingMode;
 import me.shedaniel.rei.api.client.gui.config.DisplayScreenType;
 import me.shedaniel.rei.api.client.gui.config.SyntaxHighlightingMode;
 import me.shedaniel.rei.api.client.overlay.ScreenOverlay;
+import me.shedaniel.rei.api.client.registry.entry.CollapsibleEntryRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.entry.EntryStack;
+import me.shedaniel.rei.api.common.plugins.PluginManager;
 import me.shedaniel.rei.api.common.util.CollectionUtils;
 import me.shedaniel.rei.impl.client.REIRuntimeImpl;
 import me.shedaniel.rei.impl.client.config.addon.ConfigAddonRegistryImpl;
+import me.shedaniel.rei.impl.client.config.collapsible.CollapsibleConfigManager;
 import me.shedaniel.rei.impl.client.config.entries.*;
 import me.shedaniel.rei.impl.client.gui.ScreenOverlayImpl;
 import me.shedaniel.rei.impl.client.gui.credits.CreditsScreen;
-import me.shedaniel.rei.impl.client.gui.performance.entry.PerformanceEntry;
+import me.shedaniel.rei.impl.client.gui.performance.PerformanceScreen;
+import me.shedaniel.rei.impl.client.gui.screen.ConfigReloadingScreen;
+import me.shedaniel.rei.impl.client.gui.screen.collapsible.CollapsibleEntriesScreen;
+import me.shedaniel.rei.impl.client.search.argument.Argument;
 import me.shedaniel.rei.impl.common.InternalLogger;
+import me.shedaniel.rei.impl.common.entry.type.collapsed.CollapsibleEntryRegistryImpl;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
@@ -88,6 +97,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
@@ -153,6 +163,7 @@ public class ConfigManagerImpl implements ConfigManager {
         InternalLogger.getInstance().info("Config loaded");
         saveConfig();
         FavoritesConfigManager.getInstance().syncFrom(this);
+        CollapsibleConfigManager.getInstance().syncFrom(this);
     }
     
     public static Jankson buildJankson(Jankson.Builder builder) {
@@ -416,19 +427,57 @@ public class ConfigManagerImpl implements ConfigManager {
                                     ))
                                     .withStyle(ChatFormatting.GRAY)
                     ).build();
+                    CollapsibleConfigManager.CollapsibleConfigObject collapsibleConfigObject = new CollapsibleConfigManager.CollapsibleConfigObject();
+                    collapsibleConfigObject.disabledGroups.addAll(CollapsibleConfigManager.getInstance().getConfig().disabledGroups);
+                    collapsibleConfigObject.customGroups.addAll(CollectionUtils.map(CollapsibleConfigManager.getInstance().getConfig().customGroups, CollapsibleConfigManager.CustomGroup::copy));
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.functionality")).getEntries().add(0, new ButtonsConfigEntry(220,
+                            Triple.of(Component.translatable("text.rei.collapsible.entries"), $ -> {}, editedSink -> {
+                                Minecraft.getInstance().setScreen(new CollapsibleEntriesScreen(Minecraft.getInstance().screen, collapsibleConfigObject, editedSink));
+                            })).withSaveRunnable(() -> {
+                        CollapsibleConfigManager.CollapsibleConfigObject actualConfig = CollapsibleConfigManager.getInstance().getConfig();
+                        actualConfig.disabledGroups.clear();
+                        actualConfig.disabledGroups.addAll(collapsibleConfigObject.disabledGroups);
+                        actualConfig.customGroups.clear();
+                        actualConfig.customGroups.addAll(collapsibleConfigObject.customGroups);
+                        CollapsibleConfigManager.getInstance().saveConfig();
+                        ((CollapsibleEntryRegistryImpl) CollapsibleEntryRegistry.getInstance()).recollectCustomEntries();
+                    }));
                     builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.advanced")).getEntries().add(0, feedbackEntry);
-                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.advanced")).getEntries().add(0, new ReloadPluginsEntry(220));
-                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.advanced")).getEntries().add(0, new PerformanceEntry(220));
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.advanced")).getEntries().add(0, new ButtonsConfigEntry(220,
+                            Triple.of(Component.translatable("text.rei.reload_config"), $ -> {}, $ -> {
+                                RoughlyEnoughItemsCore.PERFORMANCE_LOGGER.clear();
+                                RoughlyEnoughItemsCoreClient.reloadPlugins(null, null);
+                            }),
+                            Triple.of(Component.translatable("text.rei.reload_search"), button -> {
+                                button.active = button.active && Argument.hasCache();
+                            }, $ -> {
+                                Argument.resetCache(true);
+                            })) {
+                        @Override
+                        public void render(PoseStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isSelected, float delta) {
+                            if (PluginManager.areAnyReloading()) {
+                                Screen screen = Minecraft.getInstance().screen;
+                                Minecraft.getInstance().setScreen(new ConfigReloadingScreen(Component.translatable("text.rei.config.is.reloading"), PluginManager::areAnyReloading, () -> Minecraft.getInstance().setScreen(screen)));
+                            } else {
+                                super.render(matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+                            }
+                        }
+                    });
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.advanced")).getEntries().add(0, new ButtonsConfigEntry(220,
+                            Triple.of(Component.translatable("text.rei.performance"), $ -> {}, $ -> {
+                                Minecraft.getInstance().setScreen(new PerformanceScreen(Minecraft.getInstance().screen));
+                            })));
                 }
                 return builder.setAfterInitConsumer(screen -> {
                     ConfigAddonRegistryImpl addonRegistry = (ConfigAddonRegistryImpl) ConfigAddonRegistry.getInstance();
+                    List<AbstractConfigEntry<?>> entries = (List<AbstractConfigEntry<?>>) (List<?>) ((GlobalizedClothConfigScreen) screen).listWidget.children();
                     if (!addonRegistry.getAddons().isEmpty()) {
-                        ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) new EmptyEntry(4));
+                        entries.add(0, new EmptyEntry(4));
                         ConfigAddonsEntry configAddonsEntry = new ConfigAddonsEntry(220);
                         configAddonsEntry.setScreen((AbstractConfigScreen) screen);
-                        ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) configAddonsEntry);
+                        entries.add(0, configAddonsEntry);
                     }
-                    ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) new EmptyEntry(4));
+                    entries.add(0, new EmptyEntry(4));
                     TextListEntry supportText = ConfigEntryBuilder.create().startTextDescription(
                             Component.translatable("text.rei.support.me.desc",
                                             Component.translatable("text.rei.support.me.patreon")
@@ -447,9 +496,9 @@ public class ConfigManagerImpl implements ConfigManager {
                                     .withStyle(ChatFormatting.GRAY)
                     ).build();
                     supportText.setScreen((AbstractConfigScreen) screen);
-                    ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) supportText);
-                    ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) new TitleTextEntry(Component.translatable("text.rei.support.me")));
-                    ((GlobalizedClothConfigScreen) screen).listWidget.children().add(0, (AbstractConfigEntry) new EmptyEntry(4));
+                    entries.add(0, supportText);
+                    entries.add(0, new TitleTextEntry(Component.translatable("text.rei.support.me")));
+                    entries.add(0, new EmptyEntry(4));
                     ScreenHooks.addRenderableWidget(screen, new Button(screen.width - 104, 4, 100, 20, Component.translatable("text.rei.credits"), button -> {
                         CreditsScreen creditsScreen = new CreditsScreen(screen);
                         Minecraft.getInstance().setScreen(creditsScreen);

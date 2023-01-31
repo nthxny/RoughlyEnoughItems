@@ -25,10 +25,13 @@ package me.shedaniel.rei.impl.common.entry.type.collapsed;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import me.shedaniel.rei.api.client.config.entry.EntryStackProvider;
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.entry.CollapsibleEntryRegistry;
 import me.shedaniel.rei.api.common.entry.EntryStack;
+import me.shedaniel.rei.api.common.util.CollectionUtils;
 import me.shedaniel.rei.api.common.util.EntryStacks;
+import me.shedaniel.rei.impl.client.config.collapsible.CollapsibleConfigManager;
 import me.shedaniel.rei.impl.common.InternalLogger;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -41,18 +44,19 @@ import java.util.stream.Collectors;
 
 public class CollapsibleEntryRegistryImpl implements CollapsibleEntryRegistry {
     private final List<Entry> entries = new ArrayList<>();
+    private final List<Entry> customEntries = new ArrayList<>();
     
     @Override
     public <T> void group(ResourceLocation id, Component name, List<? extends EntryStack<? extends T>> stacks) {
         Objects.requireNonNull(stacks, "stacks");
-        this.entries.add(new Entry(id.getNamespace(), name, new ListMatcher(stacks)));
+        this.entries.add(new Entry(id, name, new ListMatcher(stacks)));
         InternalLogger.getInstance().debug("Added collapsible entry group [%s] %s with %d entries", id, name.getString(), stacks.size());
     }
     
     @Override
     public void group(ResourceLocation id, Component name, Predicate<? extends EntryStack<?>> predicate) {
         Objects.requireNonNull(predicate, "predicate");
-        this.entries.add(new Entry(id.getNamespace(), name, (stack, hashExact) -> ((Predicate<EntryStack<?>>) predicate).test(stack)));
+        this.entries.add(new Entry(id, name, (stack, hashExact) -> ((Predicate<EntryStack<?>>) predicate).test(stack)));
         InternalLogger.getInstance().debug("Added collapsible entry group [%s] %s with dynamic predicate", id, name.getString());
     }
     
@@ -63,6 +67,7 @@ public class CollapsibleEntryRegistryImpl implements CollapsibleEntryRegistry {
     
     @Override
     public void endReload() {
+        this.recollectCustomEntries();
         InternalLogger.getInstance().debug("Registered %d collapsible entry groups: ", entries.size(),
                 entries.stream().map(entry -> entry.getName().getString()).collect(Collectors.joining(", ")));
     }
@@ -72,24 +77,46 @@ public class CollapsibleEntryRegistryImpl implements CollapsibleEntryRegistry {
         plugin.registerCollapsibleEntries(this);
     }
     
+    public void recollectCustomEntries() {
+        InternalLogger.getInstance().debug("Recollecting custom collapsible entry groups");
+        this.customEntries.clear();
+        for (CollapsibleConfigManager.CustomGroup customEntry : CollapsibleConfigManager.getInstance().getConfig().customGroups) {
+            List<? extends EntryStack<?>> stacks = CollectionUtils.filterAndMap(customEntry.stacks, EntryStackProvider::isValid, EntryStackProvider::provide);
+            Entry entry = new Entry(customEntry.id, Component.literal(customEntry.name),
+                    new ListMatcher(stacks));
+            this.customEntries.add(entry);
+            InternalLogger.getInstance().debug("Added custom collapsible entry group [%s] %s with %d entries", entry.getId(), entry.getName().getString(), stacks.size());
+        }
+        InternalLogger.getInstance().debug("Registered %d custom collapsible entry groups: ", customEntries.size(),
+                customEntries.stream().map(entry -> entry.getName().getString()).collect(Collectors.joining(", ")));
+    }
+    
     public List<Entry> getEntries() {
         return entries;
     }
     
+    public List<Entry> getCustomEntries() {
+        return customEntries;
+    }
+    
     public static class Entry {
-        private final String modId;
+        private final ResourceLocation id;
         private final Component name;
         private final Matcher matcher;
         private boolean expanded;
         
-        public Entry(String modId, Component name, Matcher matcher) {
-            this.modId = modId;
+        public Entry(ResourceLocation id, Component name, Matcher matcher) {
+            this.id = id;
             this.name = name;
             this.matcher = matcher;
         }
         
+        public ResourceLocation getId() {
+            return id;
+        }
+        
         public String getModId() {
-            return modId;
+            return id.getNamespace();
         }
         
         public Component getName() {
