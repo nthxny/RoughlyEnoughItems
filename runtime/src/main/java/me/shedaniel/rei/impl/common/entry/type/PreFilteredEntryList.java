@@ -211,13 +211,13 @@ public class PreFilteredEntryList implements FilteredEntryList {
     }
     
     @Override
-    public List<EntryStack<?>> getList() {
-        return simpleListView;
+    public List<HashedEntryStackWrapper> getList() {
+        return listView;
     }
     
     @Override
-    public List<HashedEntryStackWrapper> getComplexList() {
-        return listView;
+    public List<EntryStack<?>> getUnwrappedList() {
+        return simpleListView;
     }
     
     private class InternalListView extends AbstractList<HashedEntryStackWrapper> {
@@ -290,7 +290,18 @@ public class PreFilteredEntryList implements FilteredEntryList {
         
         @Override
         public Iterator<EntryStack<?>> iterator() {
-            return Iterators.transform(list.iterator(), HashedEntryStackWrapper::unwrap);
+            Iterator<HashedEntryStackWrapper> iterator = list.iterator();
+            return new Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+                
+                @Override
+                public EntryStack<?> next() {
+                    return iterator.next().unwrap();
+                }
+            };
         }
     }
     
