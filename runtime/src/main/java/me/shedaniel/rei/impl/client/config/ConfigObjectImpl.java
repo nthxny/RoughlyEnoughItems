@@ -24,7 +24,6 @@
 package me.shedaniel.rei.impl.client.config;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
@@ -52,10 +51,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ApiStatus.Internal
 @Config(name = "roughlyenoughitems/config")
@@ -447,7 +443,34 @@ public class ConfigObjectImpl implements ConfigObject, ConfigData {
     @ApiStatus.Experimental
     @Override
     public Map<CategoryIdentifier<?>, Boolean> getFilteringQuickCraftCategories() {
-        return advanced.filtering.filteringQuickCraftCategories;
+        return advanced.miscellaneous.categorySettings.filteringQuickCraftCategories;
+    }
+    
+    @ApiStatus.Internal
+    public void setFilteringQuickCraftCategories(Map<CategoryIdentifier<?>, Boolean> filteringQuickCraftCategories) {
+        advanced.miscellaneous.categorySettings.filteringQuickCraftCategories = filteringQuickCraftCategories;
+    }
+    
+    @ApiStatus.Experimental
+    @Override
+    public Set<CategoryIdentifier<?>> getHiddenCategories() {
+        return advanced.miscellaneous.categorySettings.hiddenCategories;
+    }
+    
+    @ApiStatus.Internal
+    public void setHiddenCategories(Set<CategoryIdentifier<?>> hiddenCategories) {
+        advanced.miscellaneous.categorySettings.hiddenCategories = hiddenCategories;
+    }
+    
+    @ApiStatus.Experimental
+    @Override
+    public List<CategoryIdentifier<?>> getCategoryOrdering() {
+        return advanced.miscellaneous.categorySettings.categoryOrdering;
+    }
+    
+    @ApiStatus.Internal
+    public void setCategoryOrdering(List<CategoryIdentifier<?>> categoryOrdering) {
+        advanced.miscellaneous.categorySettings.categoryOrdering = categoryOrdering;
     }
     
     @Override
@@ -558,15 +581,6 @@ public class ConfigObjectImpl implements ConfigObject, ConfigData {
         return advanced.search.modSearch;
     }
     
-    @Override
-    public boolean isJEICompatibilityLayerEnabled() {
-        return Platform.isForge() && advanced.enableJeiCompatibilityLayer;
-    }
-    
-    public void setJEICompatibilityLayerEnabled(boolean value) {
-        advanced.enableJeiCompatibilityLayer = value;
-    }
-    
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
     @interface DontApplyFieldName {}
@@ -582,10 +596,6 @@ public class ConfigObjectImpl implements ConfigObject, ConfigData {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
     @interface UseFilteringScreen {}
-    
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.FIELD})
-    @interface UseFilteringCategoriesScreen {}
     
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
@@ -679,8 +689,6 @@ public class ConfigObjectImpl implements ConfigObject, ConfigData {
         private Miscellaneous miscellaneous = new Miscellaneous();
         @ConfigEntry.Gui.CollapsibleObject(startExpanded = true)
         public Filtering filtering = new Filtering();
-        @ConfigEntry.Gui.Excluded
-        public boolean enableJeiCompatibilityLayer = true;
         
         public static class Tooltips {
             @Comment("Declares whether REI should append mod names to entries.") private boolean appendModNames = true;
@@ -741,13 +749,19 @@ public class ConfigObjectImpl implements ConfigObject, ConfigData {
             private boolean newFastEntryRendering = true;
             @ConfigEntry.Gui.PrefixText
             private boolean cachingFastEntryRendering = false;
+            @ConfigEntry.Gui.Excluded public CategorySettings categorySettings = new CategorySettings();
+            
+            public static class CategorySettings {
+                public Map<CategoryIdentifier<?>, Boolean> filteringQuickCraftCategories = new HashMap<>();
+                public List<CategoryIdentifier<?>> categoryOrdering = new ArrayList<>();
+                public Set<CategoryIdentifier<?>> hiddenCategories = new HashSet<>();
+            }
         }
         
         public static class Filtering {
             @UseFilteringScreen private List<EntryStackProvider<?>> filteredStacks = new ArrayList<>();
             public boolean shouldFilterDisplays = true;
             @ConfigEntry.Gui.Excluded public List<FilteringRule<?>> filteringRules = new ArrayList<>();
-            @UseFilteringCategoriesScreen public Map<CategoryIdentifier<?>, Boolean> filteringQuickCraftCategories = new HashMap<>();
         }
     }
 }

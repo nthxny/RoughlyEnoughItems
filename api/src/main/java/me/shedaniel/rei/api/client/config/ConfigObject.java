@@ -37,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Environment(EnvType.CLIENT)
 public interface ConfigObject {
@@ -332,6 +333,12 @@ public interface ConfigObject {
     Map<CategoryIdentifier<?>, Boolean> getFilteringQuickCraftCategories();
     
     @ApiStatus.Experimental
+    Set<CategoryIdentifier<?>> getHiddenCategories();
+    
+    @ApiStatus.Experimental
+    List<CategoryIdentifier<?>> getCategoryOrdering();
+    
+    @ApiStatus.Experimental
     boolean shouldAsyncSearch();
     
     @ApiStatus.Experimental
@@ -382,5 +389,14 @@ public interface ConfigObject {
     
     SearchMode getModSearchMode();
     
-    boolean isJEICompatibilityLayerEnabled();
+    /**
+     * Returns whether the JEI compatibility layer is enabled.
+     *
+     * @return whether the JEI compatibility layer is enabled
+     * @deprecated the JEI compatibility layer is not bundled with REI anymore
+     */
+    @Deprecated(forRemoval = true)
+    default boolean isJEICompatibilityLayerEnabled() {
+        return false;
+    }
 }
