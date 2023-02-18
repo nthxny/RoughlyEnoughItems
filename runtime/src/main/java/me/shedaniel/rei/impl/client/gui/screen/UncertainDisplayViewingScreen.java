@@ -38,10 +38,8 @@ import me.shedaniel.rei.api.client.gui.widgets.Button;
 import me.shedaniel.rei.api.client.gui.widgets.Widget;
 import me.shedaniel.rei.api.client.gui.widgets.WidgetWithBounds;
 import me.shedaniel.rei.api.client.gui.widgets.Widgets;
-import me.shedaniel.rei.api.common.util.ImmutableTextComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -113,15 +111,15 @@ public class UncertainDisplayViewingScreen extends Screen {
         this._children().add(button = Widgets.createButton(new Rectangle(width / 2 - 100, height - 40, 200, 20), Component.empty())
                 .onRender((matrices, button) -> {
                     button.setEnabled(isSet);
-                    button.setText(new TranslatableComponent("gui.done"));
+                    button.setText(Component.translatable("gui.done"));
                 })
                 .onClick(button -> {
                         callback.accept(original);
                 }));
         this.widgets.add(new ScreenTypeSelection(width / 2 - 200 - 5, height / 2 - 112 / 2 - 10, DisplayScreenType.ORIGINAL));
-        this.widgets.add(Widgets.createLabel(new Point(width / 2 - 200 - 5 + 104, height / 2 - 112 / 2 + 115), new TranslatableComponent("config.roughlyenoughitems.recipeScreenType.original")).noShadow().color(-1124073473));
+        this.widgets.add(Widgets.createLabel(new Point(width / 2 - 200 - 5 + 104, height / 2 - 112 / 2 + 115), Component.translatable("config.roughlyenoughitems.recipeScreenType.original")).noShadow().color(-1124073473));
         this.widgets.add(new ScreenTypeSelection(width / 2 + 5, height / 2 - 112 / 2 - 10, DisplayScreenType.COMPOSITE));
-        this.widgets.add(Widgets.createLabel(new Point(width / 2 + 5 + 104, height / 2 - 112 / 2 + 115), new TranslatableComponent("config.roughlyenoughitems.recipeScreenType.composite")).noShadow().color(-1124073473));
+        this.widgets.add(Widgets.createLabel(new Point(width / 2 + 5 + 104, height / 2 - 112 / 2 + 115), Component.translatable("config.roughlyenoughitems.recipeScreenType.composite")).noShadow().color(-1124073473));
         this._children().addAll(widgets);
     }
     
@@ -136,7 +134,7 @@ public class UncertainDisplayViewingScreen extends Screen {
         } else {
             this.fillGradient(matrices, 0, 0, this.width, this.height, -16777216, -16777216);
         }
-        drawCenteredString(matrices, this.font, new TranslatableComponent("text.rei.recipe_screen_type.selection"), this.width / 2, 20, 16777215);
+        drawCenteredString(matrices, this.font, Component.translatable("text.rei.recipe_screen_type.selection"), this.width / 2, 20, 16777215);
         ScissorsHandler.INSTANCE.scissor(new Rectangle(0, 20 + font.lineHeight + 2, width, height - 42));
         if (showTips) {
             float i = 32;

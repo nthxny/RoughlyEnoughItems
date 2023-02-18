@@ -438,8 +438,8 @@ public class ConfigManagerImpl implements ConfigManager {
                             new HashSet<>(getConfig().getHiddenCategories()),
                             new ArrayList<>(getConfig().getCategoryOrdering())
                     );
-                    builder.getOrCreateCategory(new TranslatableComponent("config.roughlyenoughitems.functionality")).getEntries().add(0, new ButtonsConfigEntry(220,
-                            Triple.of(new TranslatableComponent("config.roughlyenoughitems.configureCategories"), $ -> {}, editedSink -> {
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.functionality")).getEntries().add(0, new ButtonsConfigEntry(220,
+                            Triple.of(Component.translatable("config.roughlyenoughitems.configureCategories"), $ -> {}, editedSink -> {
                                 filteringScreen.parent = Minecraft.getInstance().screen;
                                 filteringScreen.editedSink = editedSink;
                                 Minecraft.getInstance().setScreen(filteringScreen);
