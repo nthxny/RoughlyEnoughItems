@@ -45,7 +45,7 @@ public class CollapsibleEntriesScreen extends Screen {
     private boolean dirty = true;
     
     public CollapsibleEntriesScreen(Screen parent, CollapsibleConfigManager.CollapsibleConfigObject configObject, Runnable editedSink) {
-        super(Component.translatable("text.rei.collapsible.entries"));
+        super(Component.translatable("text.rei.collapsible.entries.title"));
         this.parent = parent;
         this.configObject = configObject;
         this.editedSink = editedSink;
