@@ -41,9 +41,10 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.JsonNull;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.JsonObject;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.JsonPrimitive;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.api.DeserializationException;
-import me.shedaniel.clothconfig2.api.*;
-import me.shedaniel.clothconfig2.gui.AbstractConfigScreen;
-import me.shedaniel.clothconfig2.gui.GlobalizedClothConfigScreen;
+import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.api.Modifier;
+import me.shedaniel.clothconfig2.api.ModifierKeyCode;
 import me.shedaniel.clothconfig2.gui.entries.KeyCodeEntry;
 import me.shedaniel.clothconfig2.gui.entries.TextListEntry;
 import me.shedaniel.rei.RoughlyEnoughItemsCore;
@@ -413,8 +414,6 @@ public class ConfigManagerImpl implements ConfigManager {
             provider.setOptionFunction((baseI13n, field) -> field.isAnnotationPresent(ConfigObjectImpl.DontApplyFieldName.class) ? baseI13n : String.format("%s.%s", baseI13n, field.getName()));
             provider.setCategoryFunction((baseI13n, categoryName) -> String.format("%s.%s", baseI13n, categoryName));
             provider.setBuildFunction(builder -> {
-                builder.setGlobalized(true);
-                builder.setGlobalizedExpanded(false);
                 if (Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().getConnection().getRecipeManager() != null) {
                     TextListEntry feedbackEntry = ConfigEntryBuilder.create().startTextDescription(
                             Component.translatable("text.rei.feedback", Component.translatable("text.rei.feedback.link")
@@ -467,37 +466,33 @@ public class ConfigManagerImpl implements ConfigManager {
                                 Minecraft.getInstance().setScreen(new PerformanceScreen(Minecraft.getInstance().screen));
                             })));
                 }
+                ConfigAddonRegistryImpl addonRegistry = (ConfigAddonRegistryImpl) ConfigAddonRegistry.getInstance();
+                if (!addonRegistry.getAddons().isEmpty()) {
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, new EmptyEntry(4));
+                    builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, new ConfigAddonsEntry(220));
+                }
+                TextListEntry supportText = ConfigEntryBuilder.create().startTextDescription(
+                        Component.translatable("text.rei.support.me.desc",
+                                        Component.translatable("text.rei.support.me.patreon")
+                                                .withStyle(style -> style
+                                                        .withColor(TextColor.fromRgb(0xff1fc3ff))
+                                                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://patreon.com/shedaniel"))
+                                                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("https://patreon.com/shedaniel")))
+                                                ),
+                                        Component.translatable("text.rei.support.me.bisect")
+                                                .withStyle(style -> style
+                                                        .withColor(TextColor.fromRgb(0xff1fc3ff))
+                                                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.bisecthosting.com/shedaniel"))
+                                                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("https://www.bisecthosting.com/shedaniel")))
+                                                )
+                                )
+                                .withStyle(ChatFormatting.GRAY)
+                ).build();
+                builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, new EmptyEntry(4));
+                builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, supportText);
+                builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, new TitleTextEntry(Component.translatable("text.rei.support.me")));
+                builder.getOrCreateCategory(Component.translatable("config.roughlyenoughitems.basics")).getEntries().add(0, new EmptyEntry(4));
                 return builder.setAfterInitConsumer(screen -> {
-                    ConfigAddonRegistryImpl addonRegistry = (ConfigAddonRegistryImpl) ConfigAddonRegistry.getInstance();
-                    List<AbstractConfigEntry<?>> entries = (List<AbstractConfigEntry<?>>) (List<?>) ((GlobalizedClothConfigScreen) screen).listWidget.children();
-                    if (!addonRegistry.getAddons().isEmpty()) {
-                        entries.add(0, new EmptyEntry(4));
-                        ConfigAddonsEntry configAddonsEntry = new ConfigAddonsEntry(220);
-                        configAddonsEntry.setScreen((AbstractConfigScreen) screen);
-                        entries.add(0, configAddonsEntry);
-                    }
-                    entries.add(0, new EmptyEntry(4));
-                    TextListEntry supportText = ConfigEntryBuilder.create().startTextDescription(
-                            Component.translatable("text.rei.support.me.desc",
-                                            Component.translatable("text.rei.support.me.patreon")
-                                            .withStyle(style -> style
-                                                    .withColor(TextColor.fromRgb(0xff1fc3ff))
-                                                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://patreon.com/shedaniel"))
-                                                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("https://patreon.com/shedaniel")))
-                                            ),
-                                            Component.translatable("text.rei.support.me.bisect")
-                                            .withStyle(style -> style
-                                                    .withColor(TextColor.fromRgb(0xff1fc3ff))
-                                                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.bisecthosting.com/shedaniel"))
-                                                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("https://www.bisecthosting.com/shedaniel")))
-                                            )
-                            )
-                                    .withStyle(ChatFormatting.GRAY)
-                    ).build();
-                    supportText.setScreen((AbstractConfigScreen) screen);
-                    entries.add(0, supportText);
-                    entries.add(0, new TitleTextEntry(Component.translatable("text.rei.support.me")));
-                    entries.add(0, new EmptyEntry(4));
                     ScreenHooks.addRenderableWidget(screen, new Button(screen.width - 104, 4, 100, 20, Component.translatable("text.rei.credits"), button -> {
                         CreditsScreen creditsScreen = new CreditsScreen(screen);
                         Minecraft.getInstance().setScreen(creditsScreen);
