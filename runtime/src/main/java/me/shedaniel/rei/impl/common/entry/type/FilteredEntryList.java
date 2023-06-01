@@ -42,7 +42,5 @@ public interface FilteredEntryList extends EntryRegistryListener {
     
     List<EntryStack<?>> getUnwrappedList();
     
-    List<HashedEntryStackWrapper> getComplexList();
-    
     boolean isFiltered(EntryStack<?> stack, long hashExact);
 }

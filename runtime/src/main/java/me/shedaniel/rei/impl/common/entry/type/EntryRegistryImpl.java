@@ -126,7 +126,7 @@ public class EntryRegistryImpl implements EntryRegistry {
     }
     
     public List<HashedEntryStackWrapper> getPreFilteredComplexList() {
-        return Collections.unmodifiableList(filteredList.getComplexList());
+        return Collections.unmodifiableList(filteredList.getList());
     }
     
     public List<HashedEntryStackWrapper> getComplexList() {
